@@ -1,138 +1,96 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const easyTexts = [
-        "The cat sat on the mat.",
-        "A quick brown fox jumps over the lazy dog.",
-        "She sells seashells by the seashore."
-    ];
+const quizContainer = document.getElementById('quiz');
+const button = document.getElementById('button');
 
-    const mediumTexts = [
-        "To be or not to be, that is the question.",
-        "All that glitters is not gold.",
-        "A journey of a thousand miles begins with a single step."
-    ];
-
-    const hardTexts = [
-        "It was the best of times, it was the worst of times.",
-        "In the beginning God created the heavens and the earth.",
-        "The only thing we have to fear is fear itself."
-    ];
-
-    const difficultySelect = document.getElementById('difficulty');
-    const sampleTextDiv = document.getElementById('sample-text');
-    const timeDisplay = document.getElementById('time');
-    const userInput = document.getElementById('user-input');
-    const levelDisplay = document.getElementById('level');
-    const wpmDisplay = document.getElementById('wpm');
-    const retryButton = document.getElementById('retry-btn');
-
-    let startTime;
-    let endTime;
-    let testStarted = false;
-
-    function getRandomText(textArray) {
-        const randomIndex = Math.floor(Math.random() * textArray.length);
-        return textArray[randomIndex];
+const quizQuestions = [
+    {
+        question: "What does HTML stand for?",
+        answers: {
+            a: "Hyper Text Markup Language",
+            b: "Home Tool Markup Language",
+            c: "Hyperlinks and Text Markup Language"
+        },
+        correctAnswer: "a"
+    },
+    {
+        question: "What does CSS stand for?",
+        answers: {
+            a: "Creative Style Sheets",
+            b: "Cascading Style Sheets",
+            c: "Computer Style Sheets"
+        },
+        correctAnswer: "b"
+    },
+    {
+        question: "What does JS stand for in web development?",
+        answers: {
+            a: "JavaScript",
+            b: "JavaSource",
+            c: "JustScript"
+        },
+        correctAnswer: "a"
     }
+];
 
-    function updateSampleText() {
-        let selectedDifficulty = difficultySelect.value;
-        let selectedText;
+/**
+ * Builds the quiz by generating HTML for each question and its answers.
+ */
+function buildQuiz() {
+    let output = '';
 
-        if (selectedDifficulty === 'easy') {
-            selectedText = getRandomText(easyTexts);
-        } else if (selectedDifficulty === 'medium') {
-            selectedText = getRandomText(mediumTexts);
-        } else if (selectedDifficulty === 'hard') {
-            selectedText = getRandomText(hardTexts);
+    for (let questionNumber = 0; questionNumber < quizQuestions.length; questionNumber++) {
+        let currentQuestion = quizQuestions[questionNumber];
+        let answers = '';
+
+        for (let letter in currentQuestion.answers) {
+            answers += `
+                <label>
+                    <input type="radio" name="question${questionNumber}" value="${letter}">
+                    ${letter} : ${currentQuestion.answers[letter]}
+                </label><br>
+            `;
         }
 
-        sampleTextDiv.textContent = selectedText;
+        output += '<h2 class="h5 mt-4">' + currentQuestion.question + '</h2>';
+        output += '<div class="answers">' + answers + '</div>';
     }
 
-    function stopTest() {
-        endTime = new Date();
-        const timeTaken = (endTime - startTime) / 1000; // time in seconds
-        const wpm = calculateWPM(timeTaken);
-        
-        displayResults(timeTaken, wpm);
+    quizContainer.innerHTML = output;
+}
 
-        userInput.disabled = true;        
-        retryButton.disabled = false;
-        testStarted = false;
-    }
+/**
+ * Shows the results of the quiz by checking the user's answers and displaying the score.
+ */
+function showResults() {
+    const answerContainers = quizContainer.querySelectorAll('.answers');
 
-    function calculateWPM(timeTaken) {
-        const sampleText = sampleTextDiv.textContent.trim();
-        const userText = userInput.value.trim();
-        const sampleWords = sampleText.split(" ");
-        const userWords = userText.split(" ");
-    
-        let correctWords = 0;
-        for (let i = 0; i < userWords.length; i++) {
-            if (userWords[i] === sampleWords[i]) {
-                correctWords++;
-            }
-        }
-    
-        return Math.round((correctWords / timeTaken) * 60);
-    }
+    let numCorrect = 0;
 
-    function displayResults(timeTaken, wpm) {
-        timeDisplay.textContent = timeTaken.toFixed(2);
-        wpmDisplay.textContent = wpm;
-        const selectedDifficulty = difficultySelect.value;
-        levelDisplay.textContent = selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1);
-    }
+    for (let questionNumber = 0; questionNumber < quizQuestions.length; questionNumber++) {
+        const answerContainer = answerContainers[questionNumber];
+        const selector = `input[name=question${questionNumber}]:checked`;
+        const userAnswer = (answerContainer.querySelector(selector) || {}).value;
 
-    function updateTypingFeedback() {
-
-        if (!testStarted) {
-            startTime = new Date();
-            testStarted = true;
-            retryButton.disabled = true;
-        }
-
-        const sampleText = sampleTextDiv.textContent.trim();
-        const userText = userInput.value.trim();
-        const sampleWords = sampleText.split(" ");
-        const userWords = userText.split(" ");
-    
-        let feedbackHTML = '';
-    
-        for (let i = 0; i < sampleWords.length; i++) {
-            if (userWords[i] === sampleWords[i]) {
-                feedbackHTML += `<span class="correct">${sampleWords[i]}</span> `;
-            } else if (userWords[i]) {
-                feedbackHTML += `<span class="incorrect">${sampleWords[i]}</span> `;
-            } else {
-                feedbackHTML += `<span>${sampleWords[i]}</span> `;
-            }
-        }
-    
-        sampleTextDiv.innerHTML = feedbackHTML.trim();
-    }
-
-    function handleEnterKey(event) {
-        if (event.key === 'Enter') {
-            stopTest();
+        if (userAnswer == quizQuestions[questionNumber].correctAnswer) {
+            numCorrect ++;
+            answerContainers[questionNumber].style.color = 'blue';
+        } else {
+            answerContainers[questionNumber].style.color = 'red';
         }
     }
 
-    function resetTest() {
-        userInput.value = '';
-        userInput.disabled = false;
-        updateSampleText();
-        timeDisplay.textContent = '0';
-        wpmDisplay.textContent = '0';
-        testStarted = false;
-        retryButton.disabled = true;
-    }
+    button.innerHTML = 'Try Again';
+    button.removeEventListener('click', showResults);
+    button.addEventListener('click', resetQuiz);
+}
 
-    difficultySelect.addEventListener('change', updateSampleText);
-    userInput.addEventListener('input', updateTypingFeedback);
-    userInput.addEventListener('keydown', handleEnterKey);
-    retryButton.addEventListener('click', resetTest);
+function resetQuiz() {
+    buildQuiz();
 
-    // Initialize with a random text from the default difficulty level
-    updateSampleText();
-});
+    button.innerHTML = 'Submit Quiz';
+    button.removeEventListener('click', resetQuiz);
+    button.addEventListener('click', showResults);
+}
+
+buildQuiz();
+
+button.addEventListener('click', showResults);
